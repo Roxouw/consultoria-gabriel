@@ -46,6 +46,9 @@ const STEPS = [
     ],
   },
   {
+    type: 'stats',
+  },
+  {
     type: 'q',
     key: 'genero',
     multi: false,
@@ -210,10 +213,155 @@ function renderStep() {
   // Delegate to the correct renderer
   const renderers = {
     q:      () => renderQuestion(step, block),
+    stats:  () => renderStats(block),
     weight: () => renderWeight(step, block),
     height: () => renderHeight(step, block),
   };
   renderers[step.type]?.();
+}
+
+/* ── Stats Screen ── */
+function renderStats(block) {
+  block.innerHTML = `
+    <div class="q-title">
+      <h2>A diferença de treinar <em>com acompanhamento</em></h2>
+      <p>Dados baseados em estudos de performance esportiva e acompanhamento de alunos</p>
+    </div>
+
+    <div class="stats-compare">
+
+      <div class="stats-col stats-col--without">
+        <div class="stats-col-header">
+          <span class="stats-col-icon">😟</span>
+          <span class="stats-col-label">Sem personal</span>
+        </div>
+        <div class="stats-items">
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Resultado em 3 meses</span>
+                <span class="stats-pct bad">23%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill bad" style="width:0%" data-target="23"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Consistência</span>
+                <span class="stats-pct bad">31%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill bad" style="width:0%" data-target="31"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Ganho de força</span>
+                <span class="stats-pct bad">28%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill bad" style="width:0%" data-target="28"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Motivação mantida</span>
+                <span class="stats-pct bad">19%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill bad" style="width:0%" data-target="19"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stats-col-footer bad-footer">
+          <span>⚠️ 7 em cada 10 pessoas desistem em menos de 3 meses</span>
+        </div>
+      </div>
+
+      <div class="stats-divider">VS</div>
+
+      <div class="stats-col stats-col--with">
+        <div class="stats-col-header">
+          <span class="stats-col-icon">🏆</span>
+          <span class="stats-col-label">Com personal</span>
+        </div>
+        <div class="stats-items">
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Resultado em 3 meses</span>
+                <span class="stats-pct good">89%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill good" style="width:0%" data-target="89"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Consistência</span>
+                <span class="stats-pct good">94%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill good" style="width:0%" data-target="94"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Ganho de força</span>
+                <span class="stats-pct good">76%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill good" style="width:0%" data-target="76"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-bar-wrap">
+              <div class="stats-bar-label">
+                <span>Motivação mantida</span>
+                <span class="stats-pct good">91%</span>
+              </div>
+              <div class="stats-track">
+                <div class="stats-fill good" style="width:0%" data-target="91"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stats-col-footer good-footer">
+          <span>✅ Alunos atingem o objetivo <strong>3x mais rápido</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+    <button class="btn-orange" onclick="nextStep()">
+      Quero esse resultado!
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </button>`;
+
+  // Animate bars after render
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      block.querySelectorAll('.stats-fill').forEach(bar => {
+        bar.style.transition = 'width 1s cubic-bezier(.4,0,.2,1)';
+        bar.style.width = bar.dataset.target + '%';
+      });
+    }, 150);
+  });
 }
 
 /* ── Question ── */
