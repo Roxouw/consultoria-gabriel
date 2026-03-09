@@ -55,8 +55,8 @@ const STEPS = [
     title: 'Qual é o seu <em>sexo biológico</em>?',
     layout: 'grid2',
     opts: [
-      { v: 'homem',  l: 'Homem',  icon: '🏋️', ph: 'ph-m' },
-      { v: 'mulher', l: 'Mulher', icon: '🧘', ph: 'ph-f' },
+      { v: 'homem',  l: 'Homem',  icon: '🏋️', ph: 'ph-m', img: 'img/man.png'   },
+      { v: 'mulher', l: 'Mulher', icon: '🧘', ph: 'ph-f', img: 'img/woman.png' },
     ],
   },
   {
@@ -164,10 +164,56 @@ const LABELS = {
 };
 
 /* ============================================================
+   ONLINE COUNTER
+   ============================================================ */
+function initCounter() {
+  const el = document.getElementById('online-count');
+  if (!el) return;
+  const base = Math.floor(Math.random() * 18) + 23; // 23–40
+  el.textContent = base;
+  setInterval(() => {
+    const delta = Math.random() < 0.5 ? -1 : 1;
+    const current = parseInt(el.textContent);
+    const next = Math.max(18, Math.min(55, current + delta));
+    el.textContent = next;
+  }, 4000);
+}
+
+/* ============================================================
+   TESTIMONIALS CAROUSEL
+   ============================================================ */
+let _testimonialIndex = 0;
+let _testimonialTimer = null;
+
+function goTestimonial(index) {
+  _testimonialIndex = index;
+  const cards = document.querySelectorAll('.testimonial-card');
+  cards.forEach((c, i) => {
+    c.style.transform = `translateX(${(i - index) * 100}%)`;
+  });
+  document.querySelectorAll('.t-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === index);
+  });
+}
+
+function initTestimonials() {
+  // Set initial positions
+  goTestimonial(0);
+  // Auto-advance every 4s
+  _testimonialTimer = setInterval(() => {
+    const cards = document.querySelectorAll('.testimonial-card');
+    const next = (_testimonialIndex + 1) % cards.length;
+    goTestimonial(next);
+  }, 4000);
+}
+
+/* ============================================================
    INICIALIZAÇÃO
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   emailjs.init(CONFIG.emailjsPublicKey);
+  initCounter();
+  initTestimonials();
 });
 
 /* ============================================================
@@ -381,7 +427,12 @@ function renderQuestion(step, block) {
       const sel = saved && saved.v === o.v ? ' sel' : '';
       html += `
         <button class="ocard${sel}" onclick="pickOpt(this,'${step.key}','${o.v}','${o.l}',false)">
-          <div class="cimg"><div class="cph ${o.ph}"><span>${o.icon}</span></div></div>
+          <div class="cimg">
+            ${o.img
+              ? `<img src="${o.img}" alt="${o.l}" loading="lazy">`
+              : `<div class="cph ${o.ph}"><span>${o.icon}</span></div>`
+            }
+          </div>
           <div class="cbody">
             <div class="ctext"><span class="clabel">${o.l}</span></div>
             <div class="ccheck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -401,7 +452,10 @@ function renderQuestion(step, block) {
             <div class="ccheck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
           </div>
           <div class="cimg-side">
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem">${o.emoji}</div>
+            ${o.img
+              ? `<img src="${o.img}" alt="${o.l}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`
+              : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem">${o.emoji}</div>`
+            }
           </div>
         </button>`;
     });
@@ -779,9 +833,7 @@ ${lines.join('\n')}`;
       ? `whatsapp://send?phone=${CONFIG.meuWhatsApp}&text=${text}`
       : `https://web.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
     window.open(url, '_blank');
-    msg.className   = 'send-msg ok';
-    msg.textContent = '✅ WhatsApp aberto com o resumo!';
-    document.getElementById('btn-wpp').disabled = true;
+    switchScreen('s-confirm', 's-thanks');
   }, 1000);
 }
 
