@@ -824,14 +824,20 @@ function sendWhatsApp() {
 Segue meus dados pré preenchidos no site:
 ${lines.join('\n')}`;
 
-  const text      = encodeURIComponent(mensagem);
-  const isMobile  = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  const text     = encodeURIComponent(mensagem);
+  const isIOS    = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
   setTimeout(() => {
     hideOverlay();
-    const url = isMobile
-      ? `whatsapp://send?phone=${CONFIG.meuWhatsApp}&text=${text}`
-      : `https://web.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
+    let url;
+    if (isIOS) {
+      url = `https://api.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
+    } else if (isAndroid) {
+      url = `whatsapp://send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
+    } else {
+      url = `https://web.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
+    }
     window.open(url, '_blank');
     switchScreen('s-confirm', 's-thanks');
   }, 1000);
