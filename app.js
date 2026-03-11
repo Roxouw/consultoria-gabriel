@@ -50,8 +50,8 @@ const STEPS = [
     title: 'Qual é o seu <em>sexo biológico</em>?',
     layout: 'grid2',
     opts: [
-      { v: 'homem',  l: 'Homem',  icon: '🏋️', ph: 'ph-m', img: 'img/man.png'   },
-      { v: 'mulher', l: 'Mulher', icon: '🧘', ph: 'ph-f', img: 'img/woman.png' },
+      { v: 'homem',  l: 'Homem',  icon: '🏋️', ph: 'ph-m', img: 'img/man.webp'   },
+      { v: 'mulher', l: 'Mulher', icon: '🧘', ph: 'ph-f', img: 'img/woman.webp' },
     ],
   },
   {
