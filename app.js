@@ -8,12 +8,7 @@
    ⚠️ Preencha com seus dados reais antes de publicar
    ============================================================ */
 const CONFIG = {
-  // EmailJS — painel em emailjs.com
-  emailjsPublicKey:  'SUA_PUBLIC_KEY',
-  emailjsServiceId:  'SUA_SERVICE_ID',
-  emailjsTemplateId: 'SEU_TEMPLATE_ID',
-
-  // Seu número para receber leads (país + DDD + número)
+  // Seu número para receber leads (DDI + DDD + número)
   meuWhatsApp: '5551998293886',
 };
 
@@ -211,7 +206,6 @@ function initTestimonials() {
    INICIALIZAÇÃO
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  emailjs.init(CONFIG.emailjsPublicKey);
   initCounter();
   initTestimonials();
 });
@@ -824,21 +818,28 @@ function sendWhatsApp() {
 Segue meus dados pré preenchidos no site:
 ${lines.join('\n')}`;
 
-  const text     = encodeURIComponent(mensagem);
-  const isIOS    = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const text      = encodeURIComponent(mensagem);
+  const isIOS     = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isAndroid = /Android/i.test(navigator.userAgent);
 
   setTimeout(() => {
     hideOverlay();
+
     let url;
-    if (isIOS) {
-      url = `https://api.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
-    } else if (isAndroid) {
+    if (isAndroid) {
       url = `whatsapp://send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
     } else {
-      url = `https://web.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
+      // iOS Safari e Desktop — api.whatsapp.com funciona universalmente
+      url = `https://api.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
     }
-    window.open(url, '_blank');
+
+    // location.href funciona no Safari onde window.open é bloqueado
+    if (isIOS) {
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank');
+    }
+
     switchScreen('s-confirm', 's-thanks');
   }, 1000);
 }
