@@ -821,23 +821,29 @@ ${lines.join('\n')}`;
   const text      = encodeURIComponent(mensagem);
   const isIOS     = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isAndroid = /Android/i.test(navigator.userAgent);
+  const isMobile  = isIOS || isAndroid;
+
+  // Abre a janela ANTES do setTimeout para Safari não bloquear
+  let win = null;
+  if (!isMobile) {
+    win = window.open('', '_blank');
+  }
 
   setTimeout(() => {
     hideOverlay();
 
-    let url;
-    if (isAndroid) {
-      url = `whatsapp://send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
-    } else {
-      // iOS Safari e Desktop — api.whatsapp.com funciona universalmente
-      url = `https://api.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
-    }
-
-    // location.href funciona no Safari onde window.open é bloqueado
     if (isIOS) {
-      window.location.href = url;
+      // iOS: tenta abrir o app via scheme, fallback para universal link
+      window.location.href = `whatsapp://send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
+      setTimeout(() => {
+        // Se o app não abriu em 1.5s, usa o link universal
+        window.location.href = `https://wa.me/${CONFIG.meuWhatsApp}?text=${text}`;
+      }, 1500);
+    } else if (isAndroid) {
+      window.location.href = `whatsapp://send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
     } else {
-      window.open(url, '_blank');
+      // Desktop — usa a janela já aberta
+      if (win) win.location.href = `https://web.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
     }
 
     switchScreen('s-confirm', 's-thanks');
