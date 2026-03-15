@@ -13,6 +13,39 @@ const CONFIG = {
 };
 
 /* ============================================================
+   SEGURANÇA — Sanitização de inputs
+   ============================================================ */
+function sanitize(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .trim()
+    .slice(0, 200)
+    .replace(/[<>'"&]/g, c => ({ '<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;','&':'&amp;' }[c]));
+}
+
+/* ============================================================
+   LGPD — Consentimento
+   ============================================================ */
+function initLGPD() {
+  const banner = document.getElementById('lgpd-banner');
+  if (!banner) return;
+  // Verificar se já aceitou (usando sessionStorage — sem dados pessoais)
+  if (sessionStorage.getItem('lgpd_ok')) {
+    banner.classList.add('hidden');
+    return;
+  }
+  // Mostrar após pequeno delay para não competir com o carregamento
+  setTimeout(() => banner.classList.remove('hidden'), 800);
+}
+
+function acceptLGPD() {
+  sessionStorage.setItem('lgpd_ok', '1');
+  const banner = document.getElementById('lgpd-banner');
+  if (banner) banner.classList.add('hidden');
+}
+
+
+/* ============================================================
    ESTADO DA APLICAÇÃO
    ============================================================ */
 const State = {
@@ -208,6 +241,12 @@ function initTestimonials() {
 document.addEventListener('DOMContentLoaded', () => {
   initCounter();
   initTestimonials();
+  initLGPD();
+
+  // Bind smooth scroll + stagger na tela inicial
+  const welcome = document.getElementById('s-welcome');
+  SmoothScroll.bind(welcome);
+  staggerScreen(welcome);
 });
 
 /* ============================================================
@@ -219,10 +258,17 @@ function checkName() {
 }
 
 function goQuiz() {
-  const name = document.getElementById('inp-name').value.trim();
+  const raw = document.getElementById('inp-name').value.trim();
+  if (raw.length < 2) return;
+  // Sanitiza: permite apenas letras, espaços e acentos
+  const name = sanitize(raw).replace(/[^a-zA-ZÀ-ÿ\s]/g, '').trim().slice(0, 40);
   if (name.length < 2) return;
   State.name = name;
   State.step = 0;
+
+  // GA4 — iniciou o quiz
+  gtag('event', 'quiz_start', { event_category: 'funil', event_label: 'boas_vindas' });
+
   switchScreen('s-welcome', 's-quiz');
   renderStep();
 }
@@ -258,6 +304,9 @@ function renderStep() {
     height: () => renderHeight(step, block),
   };
   renderers[step.type]?.();
+
+  // Recalcula o limite do smooth scroll após o conteúdo mudar
+  requestAnimationFrame(() => SmoothScroll.recalc());
 }
 
 /* ── Stats Screen ── */
@@ -723,6 +772,15 @@ function pickOpt(el, key, val, label, multi) {
 function nextStep() {
   if (State.step < STEPS.length - 1) {
     State.step++;
+
+    // GA4 — rastreia qual etapa o usuário avançou
+    const stepInfo = STEPS[State.step];
+    gtag('event', 'quiz_step', {
+      event_category: 'funil',
+      event_label: stepInfo.key || stepInfo.type,
+      step_number: State.step + 1,
+    });
+
     renderStep();
     document.getElementById('s-quiz').scrollTop = 0;
   } else {
@@ -750,6 +808,9 @@ function startConfirmFlow() {
     rows += `<div class="sum-row"><span class="sum-l">${label}</span><span class="sum-v">${val}</span></div>`;
   }
   document.getElementById('sum-box').innerHTML = rows;
+
+  // GA4 — concluiu todas as etapas do quiz
+  gtag('event', 'quiz_complete', { event_category: 'funil', event_label: 'analise' });
 
   // Go to analysis screen
   document.getElementById('an-name').textContent = State.name;
@@ -806,6 +867,15 @@ function sendWhatsApp() {
   const msg = document.getElementById('send-msg');
   showOverlay('Preparando mensagem...');
 
+  // GA4 — clicou no botão WhatsApp (evento de conversão principal)
+  gtag('event', 'whatsapp_click', {
+    event_category: 'conversao',
+    event_label: 'botao_whatsapp',
+    value: 1,
+  });
+  // Marca também como conversão nativa do GA4
+  gtag('event', 'generate_lead', { currency: 'BRL', value: 1 });
+
   const lines = [`• Nome: ${State.name}`];
   for (const [k, a] of Object.entries(State.answers)) {
     const val = a.values ? a.labels.join(', ') : a.l;
@@ -846,6 +916,9 @@ ${lines.join('\n')}`;
       if (win) win.location.href = `https://web.whatsapp.com/send?phone=${CONFIG.meuWhatsApp}&text=${text}`;
     }
 
+    // GA4 — chegou na tela de agradecimento
+    gtag('event', 'conversion_thanks', { event_category: 'funil', event_label: 'agradecimento' });
+
     switchScreen('s-confirm', 's-thanks');
   }, 1000);
 }
@@ -853,14 +926,161 @@ ${lines.join('\n')}`;
 /* ============================================================
    UTILITY FUNCTIONS
    ============================================================ */
+
+/* ── Smooth Scroll Engine (estilo GSAP — lerp nativo) ──────
+   Cada tela ativa recebe seu próprio estado de scroll.
+   O conteúdo se move via transform (GPU-composited),
+   sem tocar em scrollTop — zero layout thrashing.
+   Inércia controlada por lerp com ease 0.085 (suave/elegante).
+   ─────────────────────────────────────────────────────────── */
+const SmoothScroll = (() => {
+  const EASE        = 0.085;   // 0 = congelado, 1 = instantâneo
+  const WHEEL_MULT  = 0.9;     // multiplicador da roda do mouse
+  const TOUCH_MULT  = 1.0;     // multiplicador do toque
+
+  let currentScreen = null;    // elemento .screen ativo
+  let content       = null;    // elemento .screen-content
+  let target        = 0;       // scroll desejado (destino)
+  let current       = 0;       // scroll atual (interpolado)
+  let maxScroll     = 0;       // limite máximo
+  let rafId         = null;
+  let touchStartY   = 0;
+  let isRunning     = false;
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function calcMax() {
+    if (!content || !currentScreen) return 0;
+    const contentH = content.scrollHeight;
+    const screenH  = currentScreen.clientHeight;
+    return Math.max(0, contentH - screenH);
+  }
+
+  function tick() {
+    current = lerp(current, target, EASE);
+
+    // Para o loop quando está próximo o suficiente
+    if (Math.abs(target - current) < 0.05) {
+      current = target;
+      isRunning = false;
+      rafId = null;
+      applyTransform();
+      return;
+    }
+
+    applyTransform();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function applyTransform() {
+    if (content) {
+      content.style.transform = `translateY(${-current}px)`;
+    }
+  }
+
+  function startLoop() {
+    if (isRunning) return;
+    isRunning = true;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function onWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY * WHEEL_MULT;
+    target = clamp(target + delta, 0, maxScroll);
+    startLoop();
+  }
+
+  function onTouchStart(e) {
+    touchStartY = e.touches[0].clientY;
+  }
+
+  function onTouchMove(e) {
+    const dy = (touchStartY - e.touches[0].clientY) * TOUCH_MULT;
+    touchStartY = e.touches[0].clientY;
+    target = clamp(target + dy, 0, maxScroll);
+    startLoop();
+  }
+
+  function bind(screenEl) {
+    // Limpar estado anterior
+    if (currentScreen) {
+      currentScreen.removeEventListener('wheel',      onWheel,      { passive: false });
+      currentScreen.removeEventListener('touchstart', onTouchStart, { passive: true  });
+      currentScreen.removeEventListener('touchmove',  onTouchMove,  { passive: true  });
+    }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    currentScreen = screenEl;
+    content       = screenEl.querySelector('.screen-content');
+    target        = 0;
+    current       = 0;
+    isRunning     = false;
+
+    if (!content) return;
+
+    content.style.transform = 'translateY(0px)';
+
+    // Recalcular max após fontes/imagens renderizarem
+    setTimeout(() => { maxScroll = calcMax(); }, 120);
+    window.addEventListener('resize', () => { maxScroll = calcMax(); });
+
+    currentScreen.addEventListener('wheel',      onWheel,      { passive: false });
+    currentScreen.addEventListener('touchstart', onTouchStart, { passive: true  });
+    currentScreen.addEventListener('touchmove',  onTouchMove,  { passive: true  });
+  }
+
+  function reset() {
+    target = 0; current = 0;
+    if (content) content.style.transform = 'translateY(0px)';
+  }
+
+  return { bind, reset, recalc: () => { maxScroll = calcMax(); } };
+})();
+
+/* ── Stagger: anima filhos do wrapper interno de cada tela ── */
+function staggerScreen(screenEl) {
+  const content = screenEl.querySelector('.screen-content');
+  if (!content) return;
+
+  // Pega o primeiro filho (ex: .w-inner, .q-inner, .conf-inner…)
+  // e anima seus filhos diretos com stagger
+  const inner = content.children[0];
+  if (!inner) return;
+
+  const children = Array.from(inner.children);
+  children.forEach((el, i) => {
+    el.classList.remove('reveal','reveal-1','reveal-2','reveal-3','reveal-4','reveal-5','reveal-6');
+    void el.offsetWidth; // força reflow para reiniciar animação
+    const cls = Math.min(i + 1, 6);
+    el.classList.add('reveal', `reveal-${cls}`);
+  });
+}
+
 function switchScreen(fromId, toId) {
   const from = document.getElementById(fromId);
   const to   = document.getElementById(toId);
+
   from.classList.add('exit');
+  SmoothScroll.reset();
+
   setTimeout(() => {
     from.classList.add('hidden');
     from.classList.remove('exit');
     to.classList.remove('hidden');
+
+    // Bind do smooth scroll na nova tela
+    SmoothScroll.bind(to);
+    SmoothScroll.reset();
+
+    // Stagger de entrada
+    staggerScreen(to);
   }, 420);
 }
 
