@@ -68,21 +68,68 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
+  justify-content: flex-start;  /* scroll cuida do posicionamento */
+  padding: 0;                   /* padding fica no .screen-content */
   z-index: 10;
-  overflow-y: auto;
-  transition: opacity var(--transition-slow), transform var(--transition-slow);
+  overflow: hidden;             /* scroll gerenciado pelo SmoothScroll JS */
+  visibility: visible;
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s linear;
+  will-change: opacity, transform;
 }
 .screen.hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(20px);
+  visibility: hidden;
+  transform: translateY(28px);
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s linear 0.45s; /* delay = duração do fade */
 }
 .screen.exit {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-28px);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s linear 0.45s;
 }
+
+/* ── Smooth scroll viewport dentro de cada tela ── */
+.screen-scroll {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none; /* recebido pelo wrapper externo */
+}
+.screen-content {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  will-change: transform;
+  pointer-events: all;
+}
+
+/* ── Stagger de entrada dos elementos ── */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+/* Stagger aplicado só no wrapper pai — sem pointer-events: none */
+.stagger-in > * {
+  animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger-in > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.16s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.22s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.28s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.34s; }
 
 /* ── Orb Background ── */
 .bg-orbs {
@@ -132,10 +179,12 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 400px;
+  min-height: 100svh;
+  padding: 32px 0;
   gap: 28px;
-  animation: fadeUp 0.55s ease both;
 }
 
 /* Logo */
@@ -300,8 +349,11 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 460px;
+  min-height: 100svh;
+  padding: 24px 0 32px;
   margin: 0 auto;
   gap: 16px;
 }
@@ -597,15 +649,15 @@ html, body {
 /* ============================================================
    ANALYSIS SCREEN
    ============================================================ */
-#s-analysis { background: var(--bg); justify-content: center; }
+#s-analysis { background: var(--bg); }
 
 .analysis-inner {
   position: relative; z-index: 1;
-  display: flex; flex-direction: column; align-items: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: 100%; max-width: 400px;
+  min-height: 100svh;
   gap: 28px;
-  padding: 0 8px;
-  animation: fadeUp 0.5s ease both;
+  padding: 32px 8px;
 }
 
 .analysis-icon {
@@ -705,10 +757,11 @@ html, body {
    ============================================================ */
 .conf-inner {
   position: relative; z-index: 1;
-  display: flex; flex-direction: column; align-items: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: 100%; max-width: 400px;
+  min-height: 100svh;
   gap: 18px;
-  animation: fadeUp 0.5s ease both;
+  padding: 32px 0;
 }
 
 .conf-icon {
@@ -997,10 +1050,11 @@ html, body {
    ============================================================ */
 .thanks-inner {
   position: relative; z-index: 1;
-  display: flex; flex-direction: column; align-items: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: 100%; max-width: 400px;
+  min-height: 100svh;
   gap: 24px;
-  animation: fadeUp 0.5s ease both;
+  padding: 32px 0;
 }
 
 .thanks-icon {
@@ -1070,7 +1124,153 @@ html, body {
    RESPONSIVE
    ============================================================ */
 @media (min-width: 480px) {
-  .screen     { padding: 28px 20px; }
-  .w-copy h1  { font-size: 2.3rem; }
-  .q-title h2 { font-size: 1.55rem; }
+  .screen-content { padding: 0 20px; }
+  .w-copy h1      { font-size: 2.3rem; }
+  .q-title h2     { font-size: 1.55rem; }
 }
+
+/* ============================================================
+   TRUST BADGES (Tela de boas-vindas)
+   ============================================================ */
+.trust-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+.trust-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.trust-icon { font-size: 0.85rem; }
+
+/* ── Terms hint na welcome ── */
+.w-terms-hint {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.6;
+  margin-top: 2px;
+}
+.w-terms-hint a {
+  color: rgba(249,115,22,0.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.w-terms-hint a:hover { color: var(--orange); }
+
+/* ── Links no q-terms ── */
+.q-terms a {
+  color: rgba(249,115,22,0.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.q-terms a:hover { color: var(--orange); }
+
+/* ============================================================
+   GUARANTEE STRIP (Tela de confirmação)
+   ============================================================ */
+.guarantee-strip {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.guarantee-strip span { display: flex; align-items: center; gap: 4px; }
+
+/* ── LGPD hint abaixo do botão ── */
+.conf-lgpd-hint {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.6;
+}
+.conf-lgpd-hint a {
+  color: rgba(249,115,22,0.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.conf-lgpd-hint a:hover { color: var(--orange); }
+
+/* ============================================================
+   BANNER LGPD
+   ============================================================ */
+.lgpd-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  background: #1a1a1a;
+  border-top: 1px solid #2e2e2e;
+  padding: 14px 20px;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  transform: translateY(0);
+  transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s ease;
+}
+.lgpd-banner.hidden {
+  transform: translateY(110%);
+  opacity: 0;
+  pointer-events: none;
+}
+.lgpd-content {
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lgpd-content p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.lgpd-content p strong { color: var(--text); }
+.lgpd-content p a {
+  color: var(--orange-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.lgpd-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.lgpd-btn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  border-radius: 8px;
+  padding: 9px 18px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.lgpd-accept {
+  background: linear-gradient(135deg, var(--orange-light), var(--orange-dark));
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(249,115,22,0.28);
+}
+.lgpd-accept:hover { transform: translateY(-1px); box-shadow: 0 4px 18px rgba(249,115,22,0.4); }
+.lgpd-more {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-size: 0.76rem;
+}
+.lgpd-more:hover { color: var(--text); border-color: var(--border-hl); }

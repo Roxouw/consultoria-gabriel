@@ -225,9 +225,14 @@ function goTestimonial(index) {
 }
 
 function initTestimonials() {
-  // Set initial positions
+  // Limpa timer anterior se existir
+  if (_testimonialTimer) {
+    clearInterval(_testimonialTimer);
+    _testimonialTimer = null;
+  }
+  // Inicializa posições quando a tela já está visível
+  _testimonialIndex = 0;
   goTestimonial(0);
-  // Auto-advance every 4s
   _testimonialTimer = setInterval(() => {
     const cards = document.querySelectorAll('.testimonial-card');
     const next = (_testimonialIndex + 1) % cards.length;
@@ -240,7 +245,6 @@ function initTestimonials() {
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   initCounter();
-  initTestimonials();
   initLGPD();
 
   // Bind smooth scroll + stagger na tela inicial
@@ -836,7 +840,10 @@ function runAnalysis() {
       document.querySelector('.analysis-title h2').innerHTML = 'Plano <em>pronto</em>!';
       document.getElementById('an-subtitle').innerHTML =
         `Tudo certo, <strong>${State.name}</strong>. Seu plano de treino personalizado está pronto!`;
-      setTimeout(() => switchScreen('s-analysis', 's-confirm'), 900);
+      setTimeout(() => {
+        switchScreen('s-analysis', 's-confirm');
+        initTestimonials();
+      }, 900);
       return;
     }
 
@@ -1027,9 +1034,19 @@ const SmoothScroll = (() => {
 
     content.style.transform = 'translateY(0px)';
 
-    // Recalcular max após fontes/imagens renderizarem
-    setTimeout(() => { maxScroll = calcMax(); }, 120);
-    window.addEventListener('resize', () => { maxScroll = calcMax(); });
+    // Aguarda dois frames + 200ms para fontes/imagens renderizarem
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        maxScroll = calcMax();
+        // Segunda checagem após imagens carregarem
+        setTimeout(() => { maxScroll = calcMax(); }, 400);
+      });
+    });
+
+    // Recalcular ao redimensionar
+    window.addEventListener('resize', () => {
+      maxScroll = calcMax();
+    });
 
     currentScreen.addEventListener('wheel',      onWheel,      { passive: false });
     currentScreen.addEventListener('touchstart', onTouchStart, { passive: true  });
@@ -1044,23 +1061,16 @@ const SmoothScroll = (() => {
   return { bind, reset, recalc: () => { maxScroll = calcMax(); } };
 })();
 
-/* ── Stagger: anima filhos do wrapper interno de cada tela ── */
+/* ── Stagger: adiciona classe no wrapper — CSS cuida do resto ── */
 function staggerScreen(screenEl) {
   const content = screenEl.querySelector('.screen-content');
   if (!content) return;
-
-  // Pega o primeiro filho (ex: .w-inner, .q-inner, .conf-inner…)
-  // e anima seus filhos diretos com stagger
   const inner = content.children[0];
   if (!inner) return;
-
-  const children = Array.from(inner.children);
-  children.forEach((el, i) => {
-    el.classList.remove('reveal','reveal-1','reveal-2','reveal-3','reveal-4','reveal-5','reveal-6');
-    void el.offsetWidth; // força reflow para reiniciar animação
-    const cls = Math.min(i + 1, 6);
-    el.classList.add('reveal', `reveal-${cls}`);
-  });
+  // Remove e re-adiciona para reiniciar animação
+  inner.classList.remove('stagger-in');
+  void inner.offsetWidth;
+  inner.classList.add('stagger-in');
 }
 
 function switchScreen(fromId, toId) {
