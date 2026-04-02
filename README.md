@@ -1,188 +1,151 @@
-# ⚡ Gabriel Consultoria — Quiz Funnel
+# Gabriel Consultoria
 
-> Funil de captação de leads para personal training, com quiz interativo e envio direto via WhatsApp.
+Landing page mobile-first da Gabriel Consultoria com quiz de qualificação e conversão direta para o WhatsApp.
 
-![Status](https://img.shields.io/badge/status-ativo-brightgreen)
-![HTML](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
-![CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
-![JS](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
-![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-222222?logo=github&logoColor=white)
+## Demo
 
----
+Projeto publicado em:
 
-## 📱 Demo
+`https://roxouw.github.io/consultoria-gabriel/`
 
-🔗 **[Ver projeto ao vivo](https://roxouw.github.io/gabriel-consultoria)**
+## O que o projeto faz
 
----
+- Captura o nome do usuário e conduz um quiz de perfil físico
+- Exibe uma etapa de comparação "sem personal vs com personal"
+- Gera uma tela de análise para aumentar a percepção de personalização
+- Monta um resumo final com as respostas
+- Abre o WhatsApp com a mensagem do lead já preenchida
+- Exibe tela final com links para redes sociais
 
-## 🎯 O que é
+## Stack
 
-Aplicação mobile-first que guia o usuário por um quiz de perfil físico e ao final envia os dados automaticamente ao personal trainer via **WhatsApp**, gerando leads qualificados sem precisar de backend.
+- HTML
+- CSS
+- JavaScript vanilla
+- GitHub Pages para publicação
+- GA4 via `gtag`
 
----
+## Estrutura
 
-## 🖥️ Fluxo das Telas
-
-```
-[1] Boas-vindas      → Usuário digita o nome
-[2] Quiz (11 etapas) → Perguntas sobre perfil e objetivo
-[3] Análise          → Animação de processamento do perfil
-[4] Confirmação      → Resumo + depoimentos + botão WhatsApp
-[5] Agradecimento    → Links para redes sociais
-```
-
----
-
-## 📋 Etapas do Quiz
-
-| # | Pergunta | Tipo |
-|---|---|---|
-| 1 | Motivação | Lista |
-| — | Estatísticas: Com personal vs Sem | Tela especial |
-| 2 | Sexo biológico | Grid com fotos |
-| 3 | Físico atual | Lista com emoji |
-| 4 | Físico desejado | Lista com emoji |
-| 5 | Faixa etária | Grid |
-| 6 | Tempo de treino | Lista |
-| 7 | Dias por semana | Lista |
-| 8 | Tempo disponível | Lista |
-| 9 | Peso atual | Controle numérico (kg/lb) |
-| 10 | Altura | Régua deslizável (cm/pol) |
-
----
-
-## 🗂️ Estrutura de Arquivos
-
-```
-gabriel-consultoria/
-├── index.html        # Estrutura das 5 telas
-├── style.css         # Visual completo (dark theme)
-├── app.js            # Lógica do quiz e integrações
-├── README.md         # Este arquivo
+```text
+consultoria-gabriel/
+├── index.html
+├── style.css
+├── app.js
+├── privacy.html
+├── terms.html
+├── cookies.html
+├── robots.txt
+├── README.md
 └── img/
-    ├── man.png       # Foto card Homem
-    └── woman.png     # Foto card Mulher
+    ├── logo.jpeg
+    ├── logo1200.jpeg
+    ├── man.webp
+    └── woman.webp
 ```
 
----
+## Fluxo
 
-## ⚙️ Configuração
+```text
+[1] Boas-vindas   -> nome + prova + FAQ
+[2] Quiz          -> perguntas + tela de estatísticas
+[3] Análise       -> processamento visual do perfil
+[4] Confirmação   -> resumo + depoimentos + CTA de WhatsApp
+[5] Agradecimento -> redes sociais
+```
 
-### 1. WhatsApp
+## Etapas do quiz
 
-No arquivo `app.js`, altere o número no bloco `CONFIG`:
+| # | Etapa | Tipo |
+| --- | --- | --- |
+| 1 | Motivação | Lista |
+| 2 | Estatísticas | Tela especial |
+| 3 | Sexo biológico | Grid com imagem |
+| 4 | Físico atual | Lista com emoji |
+| 5 | Físico desejado | Lista com emoji |
+| 6 | Faixa etária | Grid |
+| 7 | Tempo de treino | Lista |
+| 8 | Dias por semana | Lista |
+| 9 | Tempo disponível | Lista |
+| 10 | Peso atual | Controle numérico com `kg/lb` |
+| 11 | Altura | Régua com `cm/pol` |
+
+## Configuração
+
+### WhatsApp
+
+Edite o número no bloco `CONFIG` em [app.js](/home/filipe/Documentos/github/consultoria-gabriel/app.js):
 
 ```js
 const CONFIG = {
-  meuWhatsApp: '5551998293886', // DDI + DDD + número (sem espaços)
-}
+  meuWhatsApp: "5551998293886",
+};
 ```
 
-### 2. EmailJS (opcional)
+Use o formato `DDI + DDD + número`, sem espaços.
 
-Caso queira receber os leads também por e-mail, preencha as chaves do [EmailJS](https://emailjs.com):
+### Analytics
 
-```js
-const CONFIG = {
-  emailjsPublicKey:  'SUA_PUBLIC_KEY',
-  emailjsServiceId:  'SUA_SERVICE_ID',
-  emailjsTemplateId: 'SEU_TEMPLATE_ID',
-}
-```
+O projeto usa GA4 com o ID `G-NL321L3MEJ`, configurado diretamente no `index.html`.
 
-**Variáveis do template EmailJS:**
+Se trocar a propriedade:
 
-| Variável | Descrição |
-|---|---|
-| `{{nome}}` | Nome do lead |
-| `{{email_lead}}` | E-mail do lead |
-| `{{whatsapp}}` | WhatsApp do lead |
-| `{{resumo}}` | Respostas do quiz |
-| `{{data}}` | Data e hora do envio |
+1. atualize o script `gtag`
+2. revise os eventos do funil em `app.js`
 
----
+## SEO e ativos sociais
 
-## 🚀 Deploy no GitHub Pages
+O projeto já inclui:
 
-```bash
-# 1. Clone ou inicialize o repositório
-git init
-git remote add origin https://github.com/roxouw/gabriel-consultoria.git
+- `title`, meta description, canonical e Open Graph
+- Twitter Card
+- JSON-LD para `WebSite`, `ProfessionalService` e `FAQPage`
+- `robots.txt`
+- banner social em `img/logo1200.jpeg` no formato `1200x630`
 
-# 2. Adicione os arquivos
-git add .
-git commit -m "primeiro commit"
+## Páginas legais
 
-# 3. Suba para o GitHub
-git push -u origin main
+O projeto inclui:
 
-# 4. Ative o GitHub Pages
-# Settings → Pages → Branch: main → / (root) → Save
-```
+- `privacy.html`
+- `terms.html`
+- `cookies.html`
 
-O site ficará disponível em:
-```
-https://roxouw.github.io/gabriel-consultoria
-```
+Essas páginas existem para dar suporte ao banner de privacidade, ao texto legal do quiz e à documentação mínima de uso do site.
 
-> ⚠️ O GitHub Pages pode levar até 2 minutos para atualizar após o push.
+## Publicação
 
----
-
-## 🛠️ Atualizar o projeto
+### GitHub Pages
 
 ```bash
 git add .
-git commit -m "descrição da alteração"
+git commit -m "atualiza landing"
 git push origin main
 ```
 
----
+Depois, no GitHub:
 
-## 🎨 Design
+`Settings -> Pages -> Branch: main -> /(root) -> Save`
 
-- **Tema:** Dark com acentos laranja (`#f97316`)
-- **Fontes:** [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed) (títulos) + [Barlow](https://fonts.google.com/specimen/Barlow) (corpo)
-- **Mobile-first:** Otimizado para telas a partir de 320px
+## Funcionalidades atuais
 
-### Tokens de cor
-
-| Token | Valor | Uso |
-|---|---|---|
-| `--orange` | `#f97316` | Cor principal |
-| `--orange-light` | `#fb923c` | Hover / gradiente |
-| `--orange-dark` | `#c2410c` | Gradiente escuro |
-| `--bg` | `#141414` | Fundo principal |
-| `--bg-card` | `#1e1e1e` | Cards |
-| `--text` | `#f2f2f2` | Texto principal |
-
----
-
-## ✨ Funcionalidades
-
-- [x] Quiz com 10 perguntas + tela de estatísticas
-- [x] Fotos reais nos cards de gênero
-- [x] Contador de pessoas online (dinâmico)
-- [x] Carrossel de depoimentos automático
-- [x] Tela de análise animada (4 passos)
-- [x] Envio de lead formatado via WhatsApp
-- [x] Tela de agradecimento com redes sociais
-- [x] Meta tags SEO + preview para WhatsApp/redes
-- [x] Suporte a kg/lb e cm/pol
-- [x] Totalmente responsivo (mobile-first)
-- [ ] Banner og:image 1200×630px
+- [x] Quiz com 11 etapas lógicas
+- [x] CTA principal para WhatsApp
+- [x] Mensagem do lead pré-formatada
+- [x] Carrossel de depoimentos
+- [x] Contador dinâmico de pessoas online
+- [x] Tela de análise animada
+- [x] Banner LGPD
+- [x] Páginas legais
+- [x] Meta tags SEO
+- [x] Banner `og:image` 1200x630
+- [x] Layout mobile-first
 - [ ] Domínio próprio
 
----
+## Exemplo da mensagem enviada
 
-## 📬 Mensagem enviada ao Gabriel
-
-Ao final do quiz, o WhatsApp abre com a mensagem já preenchida:
-
-```
-Olá Gabriel, gostaria de fazer uma avaliação e montar
-meu treino personalizado com você!
+```text
+Olá Gabriel, gostaria de fazer uma avaliação e montar meu treino personalizado com você!
 
 Segue meus dados pré preenchidos no site:
 • Nome: João
@@ -198,18 +161,16 @@ Segue meus dados pré preenchidos no site:
 • Altura: 175 cm
 ```
 
----
+## Créditos
 
-## 👤 Créditos
+Personal trainer:
 
-**Personal Trainer**
-[@gabrielmoraes_treinador](https://www.instagram.com/gabrielmoraes_treinador/) — Instagram & TikTok
+[@gabrielmoraes_treinador](https://www.instagram.com/gabrielmoraes_treinador/)
 
-**Desenvolvido por**
-[@filipe.rosso](https://www.instagram.com/filipe.rosso/) — Filipe Rosso
+Desenvolvimento:
 
----
+[@filipe.rosso](https://www.instagram.com/filipe.rosso/) — Rosso Labs
 
-## 📄 Licença
+## Licença
 
-Este projeto é de uso exclusivo de Gabriel Consultoria.
+Projeto de uso exclusivo de Gabriel Consultoria.
